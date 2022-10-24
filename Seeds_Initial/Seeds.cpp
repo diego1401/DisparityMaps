@@ -12,6 +12,7 @@ using namespace std;
 
 // Default data
 const char *DEF_im1=srcPath("im1.jpg"), *DEF_im2=srcPath("im2.jpg");
+//const char *DEF_im1=srcPath("ex1_left.jpeg"), *DEF_im2=srcPath("ex1_right.jpeg");
 static int dmin=-30, dmax=-7; // Min and max disparities
 
 /// Min NCC for a seed
@@ -28,12 +29,13 @@ struct Seed {
     : x(x0), y(y0), d(d0), ncc(ncc0) {}
     int x,y, d;
     float ncc;
+    /// Order by NCC
+    bool operator<(const Seed& s2) const {
+        return (ncc<s2.ncc);
+    }
 };
 
-/// Order by NCC
-bool operator<(const Seed& s1, const Seed& s2) {
-    return (s1.ncc<s2.ncc);
-}
+
 
 /// 4-neighbors
 static const int dx[]={+1,  0, -1,  0};
@@ -106,8 +108,8 @@ static float correl(const Image<byte>& im1, int i1,int j1,float m1,
     float d_windows = 0, var_left = 0, var_right=0;
     int x_1,x_2,y_1,y_2;
     float Il_normalized,Ir_normalized;
-    for (int i_delta=-win;i_delta<win;i_delta++){
-        for(int j_delta=-win;j_delta<win;j_delta++){
+    for (int i_delta=-win;i_delta<=win;i_delta++){
+        for(int j_delta=-win;j_delta<=win;j_delta++){
             x_1 = i1 + i_delta; y_1 = j1+ j_delta;
             x_2 = i2 + i_delta; y_2 = j2+ j_delta;
             if (coords_in_image(im1,x_1,y_1) and coords_in_image(im2,x_2,y_2)){
@@ -131,8 +133,8 @@ static float sum(const Image<byte>& im, int i, int j) {
     float s=0.0f;
     // -------------TODO-------------
     int x,y;
-    for (int i_delta=-win;i_delta<win;i_delta++){
-        for(int j_delta=-win;j_delta<win;j_delta++){
+    for (int i_delta=-win;i_delta<=win;i_delta++){
+        for(int j_delta=-win;j_delta<=win;j_delta++){
             x = i + i_delta; y = j + j_delta;
             if (coords_in_image(im,x,y)){
                 s += im(x,y);
@@ -173,8 +175,8 @@ static void find_seeds(Image<byte> im1, Image<byte> im2,
             // ------------- TODO -------------
             // Hint: just ignore windows that are not fully in image
             NCC = -1;
-            for(int d=dmin; d<dmax;d++){
-                if(x+d>= win){
+            for(int d=dmin; d<=dmax;d++){
+                if(win<x+d and x+d<im1.width()-win){
                     NCC_tmp = ccorrel(im1,x,y,im2,x+d,y);
                     if(NCC<NCC_tmp){
                         NCC = NCC_tmp;
