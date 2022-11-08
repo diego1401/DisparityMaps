@@ -16,13 +16,15 @@ typedef Image<double> doubleImage;
 
 // Default data
 const char *DEF_im1=srcPath("face0.png"), *DEF_im2=srcPath("face1.png");
+//const char *DEF_im1=srcPath("im1.jpg"), *DEF_im2=srcPath("im2.jpg");
 static int dmin=10, dmax=55; // Min and max disparities
+//static int dmin=-40, dmax=-5; // Min and max disparities
 
 // Parameters of the algorithm
 // OPTIMIZATION: to make the program faster, a zoom factor is used to
 // down-sample the input images on the fly. You will
 // only look at pixels (win+zoom*i,win+zoom*j) with win the radius of patch.
-const int win = (15-1)/2;    // Correlation patches of size (2n+1)*(2n+1)
+const int win = (7-1)/2;    // Correlation patches of size (2n+1)*(2n+1)
 const float lambdaf = 0.1;  // Weight of regularization (smoothing) term
 const int zoom = 2;         // Zoom factor (to speedup computations)
 const float sigma = 6/zoom; // Gaussian blur parameter for disparity
@@ -264,7 +266,8 @@ doubleImage decode_graph(Graph<int,int,int>& G, int nx, int ny, int nd) {
         for(int y=0; y<ny; y++) {
             for(int d=0;d<nd;d++){
                 if (G.what_segment(map(x,y,d)) != Graph<int,int,int>::SOURCE){
-                    D(x,y) = dmin + d;
+                    D(x,y) = min(abs(dmin),abs(dmax)) + d;
+//                    D(x,y) = d - nd; //to get same format as in seeds
                     break;
                 }
             }
@@ -306,7 +309,7 @@ int main(int argc, char* argv[]) {
 
     // Zoomed image dim, disregarding borders (strips of width the patch radius)
     const int nx=(w1-2*win)/zoom, ny=(h-2*win)/zoom;
-    const int nd=dmax-dmin; // Disparity range
+    const int nd=abs(dmax-dmin); // Disparity range
 
     cout << "Constructing graph (be patient)... " << flush;
     Graph<int,int,int> G(nx*ny*nd,2*nx*ny*nd);
